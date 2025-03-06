@@ -49,6 +49,30 @@
       h3 {
         text-align: center;
       }
+
+      .print-tag-container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: start;
+      }
+
+      .print-tag {
+        display: inline-block;
+        padding: 2px 6px;
+        background-color: #f0f0f0;
+        font-size: 13px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+        user-select: none;
+      }
+
+      .print-tag.selected {
+        background-color: #007bff;
+        color: white;
+      }
     </style>
   </head>
   <body>
@@ -101,6 +125,19 @@
             <option value="No">No</option>
           </select>
         </label>
+        <label id="classSelectFormat">
+          Class Photo Format*
+          <select id="classPhotoType" name="classPhotoType">
+            <option value="digitalDownloads" selected>Digital Downloads</option>
+            <option value="printedPhotos">Printed Photos</option>
+            <option value="Both">Both</option>
+          </select>
+        </label>
+
+        <div id="classPrintPackageContainer">
+          <label>Class Photo Print Package*</label>
+          <div class="class-print-tag-container print-tag-container"></div>
+        </div>
         <label>
           Do You Want Individual Portraits of Your Child?
           <select id="individualPortraits" name="individualPortraits">
@@ -108,6 +145,19 @@
             <option value="No">No</option>
           </select>
         </label>
+        <label id="individualSelectFormat">
+          Individual Portrait Photo Format*
+          <select id="individualPhotoType" name="individualPhotoType">
+            <option value="digitalDownloads" selected>Digital Downloads</option>
+            <option value="printedPhotos">Printed Photos</option>
+            <option value="Both">Both</option>
+          </select>
+        </label>
+
+        <div id="individualPrintPackageContainer">
+          <label>Individual Portrait Print Package*</label>
+          <div class="individual-print-tag-container print-tag-container"></div>
+        </div>
         <label>
           Photo Style*
           <select id="photoStyle" name="photoStyle">
@@ -116,38 +166,84 @@
             <option value="Both">Both</option>
           </select>
         </label>
-        <label>
-          Photo Format*
-          <select id="photoType" name="photoType">
-            <option value="digitalDownloads" selected>Digital Downloads</option>
-            <option value="printedPhotos">Printed Photos</option>
-            <option value="Both">Both</option>
-          </select>
-        </label>
 
-        <div id="printPackageContainer" style="display: none"></div>
-
-        <label>
+        <label for="shippingAddress">
           Shipping Address*
-          <input type="text" name="shippingAddress" />
+          <input type="text" id="shippingAddress" name="shippingAddress" />
         </label>
 
         <h4>Breakdown:</h4>
         <p>Digital Download Price: $<span id="digitalPrice">0.00</span></p>
         <p>Print Package Price: $<span id="printPrice">0.00</span></p>
-        <h3>Total Price: $<span id="totalPrice">0.00</span></h3>
-        <button type="submit">Submit</button>
+        <h3>Total Price: $<span class="totalPrice">0.00</span></h3>
+        <button type="submit">
+          Submit - $<span class="totalPrice">0.00</span>
+        </button>
       </form>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
       $(document).ready(function () {
-        $("#printPackageContainer").hide();
+        $("#sameClassContainer").hide();
 
+        function toggleShippingAddress() {
+          const hasPrints = $(".print-tag.selected").length > 0;
+          if (hasPrints) {
+            $("input[name='shippingAddress']").prop("required", true);
+            $("label[for='shippingAddress']").show();
+          } else {
+            $("input[name='shippingAddress']").prop("required", false);
+            $("label[for='shippingAddress']").hide();
+          }
+        }
+
+        function togglePrintPackageFields() {
+          const individualPortraits = $("#individualPortraits").val();
+          const individualPhotoType = $("#individualPhotoType").val();
+
+          if (individualPortraits === "Yes") {
+            $("#individualSelectFormat").show();
+          } else {
+            $("#individualSelectFormat").hide();
+          }
+
+          if (
+            individualPhotoType === "printedPhotos" ||
+            individualPhotoType === "Both"
+          ) {
+            $("#individualPrintPackageContainer").show();
+          } else {
+            $("#individualPrintPackageContainer").hide();
+          }
+
+          const classPhoto = $("#classPhoto").val();
+          const classPhotoType = $("#classPhotoType").val();
+
+          if (classPhoto === "Yes") {
+            $("#classSelectFormat").show();
+          } else {
+            $("#classSelectFormat").hide();
+          }
+
+          if (
+            classPhoto === "Yes" &&
+            (classPhotoType === "printedPhotos" || classPhotoType === "Both")
+          ) {
+            $("#classPrintPackageContainer").show();
+          } else {
+            $("#classPrintPackageContainer").hide();
+          }
+        }
         $("#childCount").on("change", function () {
           let childCount = parseInt($(this).val());
           let $childrenContainer = $("#childrenContainer");
-          $childrenContainer.empty(); // Clear previous entries
+          $childrenContainer.empty();
+
+          if (childCount > 1) {
+            $("#sameClassContainer").show();
+          } else {
+            $("#sameClassContainer").hide();
+          }
 
           for (let i = 1; i <= childCount; i++) {
             let childDiv = $(`
@@ -193,18 +289,29 @@
           { name: "16x20 - Deep Matte", price: 43.0 },
         ];
 
-        let $printContainer = $("#printPackageContainer");
-        $printContainer.empty();
+        let $classPrintContainer = $(".class-print-tag-container");
 
         printPackages.forEach((pkg, index) => {
-          $printContainer.append(`
+          $classPrintContainer.append(`
               <div>
-                <label>
-                  <input type="checkbox" class="print-checkbox" data-price="${
-                    pkg.price
-                  }" data-index="${index}" />
-                  ${pkg.name} - $${pkg.price.toFixed(2)}
-                </label>
+                <span class="print-tag class-print-tag" data-price="${
+                  pkg.price
+                }" data-index="${index}">
+      ${pkg.name} - $${pkg.price.toFixed(2)}
+    </span>
+              </div>
+            `);
+        });
+        let $printIndividualContainer = $(".individual-print-tag-container");
+
+        printPackages.forEach((pkg, index) => {
+          $printIndividualContainer.append(`
+              <div>
+                <span class="print-tag individual-print-tag" data-price="${
+                  pkg.price
+                }" data-index="${index}">
+      ${pkg.name} - $${pkg.price.toFixed(2)}
+    </span>
               </div>
             `);
         });
@@ -214,48 +321,264 @@
 
         function calculatePrice() {
           let childCount = parseInt($("#childCount").val()) || 1;
-          let photoType = $("#photoType").val();
           let photoStyle = $("#photoStyle").val();
-          let individualPortraits = $("#individualPortraits").val(); // Yes or No
-          let classPhoto = $("#classPhoto").val(); // Yes or No
-          let sameClass = $("#sameClass").val(); // Yes or No
-
+          let individualPortraits = $("#individualPortraits").val();
+          let classPhoto = $("#classPhoto").val();
+          let sameClass = $("#sameClass").val();
           let poses = photoStyle === "Both" ? 2 : 1;
+
           let digitalPrice = 0;
           let printPrice = 0;
 
-          if (photoType === "Both" || photoType === "digitalDownloads") {
-            if (individualPortraits === "Yes") {
-              digitalPrice = childCount * poses * 22;
+          // Individual Portraits Calculations
+          if (individualPortraits === "Yes") {
+            const individualPhotoType = $("#individualPhotoType").val();
+
+            // Digital calculations
+            if (
+              individualPhotoType === "digitalDownloads" ||
+              individualPhotoType === "Both"
+            ) {
+              digitalPrice += childCount * poses * 22;
             }
 
-            if (classPhoto === "Yes") {
-              digitalPrice +=
-                sameClass === "Yes" ? poses * 22 : childCount * poses * 22; // Class photo price
+            // Print calculations
+            if (
+              individualPhotoType === "printedPhotos" ||
+              individualPhotoType === "Both"
+            ) {
+              $(".individual-print-tag.selected").each(function () {
+                let price = parseFloat($(this).data("price"));
+                printPrice += childCount * poses * price;
+              });
             }
           }
 
-          // Print Price Calculation
-          if (photoType === "Both" || photoType === "printedPhotos") {
-            $(".print-checkbox:checked").each(function () {
-              let price = parseFloat($(this).data("price"));
-              printPrice += price * childCount;
+          // Class Photo Calculations
+          if (classPhoto === "Yes") {
+            const classPhotoType = $("#classPhotoType").val();
+            const classMultiplier = sameClass === "Yes" ? 1 : childCount;
 
-              if (individualPortraits === "Yes") {
-                printPrice += price * childCount;
-              }
+            // Digital calculations
+            if (
+              classPhotoType === "digitalDownloads" ||
+              classPhotoType === "Both"
+            ) {
+              digitalPrice += classMultiplier * poses * 22;
+            }
 
-              if (classPhoto === "Yes") {
-                printPrice += sameClass === "Yes" ? price : price * childCount; // Class photo print price
-              }
-            });
+            // Print calculations
+            if (
+              classPhotoType === "printedPhotos" ||
+              classPhotoType === "Both"
+            ) {
+              $(".class-print-tag.selected").each(function () {
+                let price = parseFloat($(this).data("price"));
+                printPrice += classMultiplier * poses * price;
+              });
+            }
           }
 
           let total = digitalPrice + printPrice;
           $("#digitalPrice").text(digitalPrice.toFixed(2));
           $("#printPrice").text(printPrice.toFixed(2));
-          $("#totalPrice").text(total.toFixed(2));
+          $(".totalPrice").text(total.toFixed(2));
         }
+
+        $(document).on(
+          "change",
+          "#individualPortraits, #individualPhotoType, #classPhoto, #classPhotoType",
+          function () {
+            togglePrintPackageFields();
+            calculatePrice();
+          }
+        );
+        $(document).on("click", ".print-tag", function () {
+          $(this).toggleClass("selected");
+          toggleShippingAddress();
+          calculatePrice();
+        });
+
+        function validateFormOptions() {
+          const classPhoto = $("#classPhoto").val();
+          const individualPortraits = $("#individualPortraits").val();
+
+          if (classPhoto === "No" && individualPortraits === "No") {
+            alert(
+              "Please select 'Yes' for at least one option: Class Photo or Individual Portraits."
+            );
+            return false;
+          }
+          return true;
+        }
+        $("#photoForm").on("submit", function (e) {
+          e.preventDefault();
+          const form = e.target;
+
+          if (!validateFormOptions()) {
+            return;
+          }
+
+          // Trigger HTML5 validation
+          if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+          }
+
+          // Collect basic form data
+          const formData = $(this)
+            .serializeArray()
+            .reduce((acc, field) => {
+              acc[field.name] = field.value;
+              return acc;
+            }, {});
+
+          // Collect children's data
+          const children = [];
+          const childCount = parseInt(formData.childCount);
+          for (let i = 1; i <= childCount; i++) {
+            children.push({
+              name: formData[`childName${i}`],
+              grade: formData[`childGrade${i}`],
+            });
+          }
+
+          // Collect print package selections
+          const printSelections = {
+            individual: $(".individual-print-tag.selected")
+              .map(function () {
+                return {
+                  package: $(this).text().trim(),
+                  price: parseFloat($(this).data("price")),
+                };
+              })
+              .get(),
+            class: $(".class-print-tag.selected")
+              .map(function () {
+                return {
+                  package: $(this).text().trim(),
+                  price: parseFloat($(this).data("price")),
+                };
+              })
+              .get(),
+          };
+
+          // Construct final data object
+          const submissionData = {
+            parentInfo: {
+              name: formData.parentName,
+              email: formData.parentEmail,
+              phone: formData.parentPhone,
+            },
+            children,
+            sameClass: formData.sameClass,
+            classPhoto: {
+              wanted: formData.classPhoto,
+              format: formData.classPhotoType,
+              prints: printSelections.class,
+            },
+            individualPortraits: {
+              wanted: formData.individualPortraits,
+              format: formData.individualPhotoType,
+              prints: printSelections.individual,
+            },
+            photoStyle: formData.photoStyle,
+            shippingAddress: formData.shippingAddress,
+            pricing: {
+              digital: parseFloat($("#digitalPrice").text()),
+              prints: parseFloat($("#printPrice").text()),
+              total: parseFloat($(".totalPrice").text()),
+            },
+          };
+
+          console.log("Form Submission Data:", submissionData);
+
+          const emailFormat = `
+           School Pictures Order Summary:
+    -----------------------------
+    Parent Information:
+    - Name: ${submissionData.parentInfo.name}
+    - Email: ${submissionData.parentInfo.email}
+    - Phone: ${submissionData.parentInfo.phone}
+
+    Children Information:
+    ${submissionData.children
+      .map(
+        (child, index) => `
+    Child ${index + 1}:
+    - Name: ${child.name}
+    - Grade: ${child.grade}`
+      )
+      .join("\n")}
+
+    Class Photo:
+    - Wanted: ${submissionData.classPhoto.wanted}
+    - Format: ${
+      submissionData.classPhoto.wanted === "Yes"
+        ? submissionData.classPhoto.format
+        : "N/A"
+    }
+    ${
+      submissionData.classPhoto.prints.length > 0
+        ? `- Selected Print Packages:
+    ${submissionData.classPhoto.prints
+      .map((pkg) => `  • ${pkg.package}`)
+      .join("\n")}`
+        : ""
+    }
+
+    Individual Portraits:
+    - Wanted: ${submissionData.individualPortraits.wanted}
+    - Format: ${
+      submissionData.individualPortraits.wanted === "Yes"
+        ? submissionData.individualPortraits.format
+        : "N/A"
+    }
+    ${
+      submissionData.individualPortraits.prints.length > 0
+        ? `- Selected Print Packages:
+    ${submissionData.individualPortraits.prints
+      .map((pkg) => `  • ${pkg.package}`)
+      .join("\n")}`
+        : ""
+    }
+
+    Photo Style: ${submissionData.photoStyle}
+
+    ${
+      submissionData.shippingAddress
+        ? `Shipping Address: ${submissionData.shippingAddress}`
+        : ""
+    }
+
+    Pricing Summary:
+    - Digital Downloads: $${submissionData.pricing.digital.toFixed(2)}
+    - Print Packages: $${submissionData.pricing.prints.toFixed(2)}
+    - Total: $${submissionData.pricing.total.toFixed(2)}
+  `;
+
+          // Display email-friendly format on the page
+          const resultContainer = $("<div>")
+            .addClass("container")
+            .css({
+              "margin-top": "20px",
+              "background-color": "#f0f0f0",
+              padding: "20px",
+            })
+            .html(`<pre>${emailFormat}</pre>`);
+
+          $("body").append(resultContainer);
+
+          // Scroll to the result
+          $("html, body").animate(
+            {
+              scrollTop: resultContainer.offset().top,
+            },
+            1000
+          );
+        });
+        toggleShippingAddress();
+        togglePrintPackageFields();
         calculatePrice();
       });
     </script>
