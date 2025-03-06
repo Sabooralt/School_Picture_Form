@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>School Pictures Form</title>
+    <style>
+      .hidden {
+        display: none;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f9f9f9;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: auto;
+        padding: 5rem 0;
+        margin: 0;
+      }
+      .container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        width: 400px;
+      }
+      label {
+        font-weight: bold;
+        display: block;
+        margin-top: 10px;
+      }
+      input,
+      select,
+      button {
+        width: 100%;
+        padding: 8px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      button {
+        background-color: #000;
+        color: white;
+        font-size: 16px;
+        margin-top: 15px;
+        cursor: pointer;
+      }
+      h3 {
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>School Pictures Form</h2>
+      <form id="photoForm">
+        <label>
+          Parent Name: First, Last*
+          <input type="text" name="parentName" required="" />
+        </label>
+        <label>
+          Parent Email Address*
+          <input type="email" name="parentEmail" required="" />
+        </label>
+        <label>
+          Parent Phone Number*
+          <input type="tel" name="parentPhone" required="" />
+        </label>
+        <label>
+          How Many Children Are You Having Photographed*
+          <select id="childCount" name="childCount" required="">
+            <option value="1" selected>1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </label>
+        <div id="childrenContainer">
+          <label>
+            Name of Child 1*
+            <input type="text" name="childName1" required />
+          </label>
+          <label>
+            Grade of Child 1*
+            <input type="text" name="childGrade1" required />
+          </label>
+        </div>
+        <label id="sameClassContainer">
+          Are the children in the same class?*
+          <select id="sameClass" name="sameClass">
+            <option value="Yes" selected>Yes</option>
+            <option value="No">No</option>
+          </select>
+        </label>
+        <label>
+          Do you want your child's class photo as well?*
+          <select id="classPhoto" name="classPhoto">
+            <option value="Yes" selected>Yes</option>
+            <option value="No">No</option>
+          </select>
+        </label>
+        <label>
+          Do You Want Individual Portraits of Your Child?
+          <select id="individualPortraits" name="individualPortraits">
+            <option value="Yes" selected>Yes</option>
+            <option value="No">No</option>
+          </select>
+        </label>
+        <label>
+          Photo Style*
+          <select id="photoStyle" name="photoStyle">
+            <option value="Traditional" selected>Traditional</option>
+            <option value="Characteristic">Characteristic</option>
+            <option value="Both">Both</option>
+          </select>
+        </label>
+        <label>
+          Photo Format*
+          <select id="photoType" name="photoType">
+            <option value="digitalDownloads" selected>Digital Downloads</option>
+            <option value="printedPhotos">Printed Photos</option>
+            <option value="Both">Both</option>
+          </select>
+        </label>
+
+        <div id="printPackageContainer" style="display: none"></div>
+
+        <label>
+          Shipping Address*
+          <input type="text" name="shippingAddress" />
+        </label>
+
+        <h4>Breakdown:</h4>
+        <p>Digital Download Price: $<span id="digitalPrice">0.00</span></p>
+        <p>Print Package Price: $<span id="printPrice">0.00</span></p>
+        <h3>Total Price: $<span id="totalPrice">0.00</span></h3>
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        $("#printPackageContainer").hide();
+
+        $("#childCount").on("change", function () {
+          let childCount = parseInt($(this).val());
+          let $childrenContainer = $("#childrenContainer");
+          $childrenContainer.empty(); // Clear previous entries
+
+          for (let i = 1; i <= childCount; i++) {
+            let childDiv = $(`
+              <div>
+                <label> Name of Child ${i}*
+                  <input type="text" name="childName${i}" required />
+                </label>
+                <label> Grade of Child ${i}*
+                  <input type="text" name="childGrade${i}" required />
+                </label>
+              </div>
+            `);
+            $childrenContainer.append(childDiv);
+          }
+        });
+
+        $("#photoType").on("change", function () {
+          let photoType = $(this).val();
+          if (photoType === "Both" || photoType === "printedPhotos") {
+            $("#printPackageContainer").show();
+          } else {
+            $("#printPackageContainer").hide();
+          }
+          calculatePrice();
+        });
+
+        const printPackages = [
+          { name: "8 Up Wallet - Glossy", price: 8.0 },
+          { name: "8 Up Wallet - Deep Matte", price: 9.0 },
+          { name: "4x6 - Glossy", price: 3.0 },
+          { name: "4x6 - Deep Matte", price: 4.0 },
+          { name: "5x7 - Glossy", price: 5.0 },
+          { name: "5x7 - Deep Matte", price: 6.0 },
+          { name: "8x10 - Glossy", price: 7.0 },
+          { name: "8x10 - Deep Matte", price: 9.0 },
+          { name: "8x12 - Glossy", price: 13.0 },
+          { name: "8x12 - Deep Matte", price: 15.0 },
+          { name: "11x14 - Glossy", price: 14.0 },
+          { name: "11x14 - Deep Matte", price: 17.0 },
+          { name: "12x18 - Glossy", price: 19.0 },
+          { name: "12x18 - Deep Matte", price: 24.0 },
+          { name: "16x20 - Glossy", price: 35.0 },
+          { name: "16x20 - Deep Matte", price: 43.0 },
+        ];
+
+        let $printContainer = $("#printPackageContainer");
+        $printContainer.empty();
+
+        printPackages.forEach((pkg, index) => {
+          $printContainer.append(`
+              <div>
+                <label>
+                  <input type="checkbox" class="print-checkbox" data-price="${
+                    pkg.price
+                  }" data-index="${index}" />
+                  ${pkg.name} - $${pkg.price.toFixed(2)}
+                </label>
+              </div>
+            `);
+        });
+
+        $("#photoForm").on("change", calculatePrice);
+        $(".print-checkbox").on("change", calculatePrice);
+
+        function calculatePrice() {
+          let childCount = parseInt($("#childCount").val()) || 1;
+          let photoType = $("#photoType").val();
+          let photoStyle = $("#photoStyle").val();
+          let individualPortraits = $("#individualPortraits").val(); // Yes or No
+          let classPhoto = $("#classPhoto").val(); // Yes or No
+          let sameClass = $("#sameClass").val(); // Yes or No
+
+          let poses = photoStyle === "Both" ? 2 : 1;
+          let digitalPrice = 0;
+          let printPrice = 0;
+
+          if (photoType === "Both" || photoType === "digitalDownloads") {
+            if (individualPortraits === "Yes") {
+              digitalPrice = childCount * poses * 22;
+            }
+
+            if (classPhoto === "Yes") {
+              digitalPrice +=
+                sameClass === "Yes" ? poses * 22 : childCount * poses * 22; // Class photo price
+            }
+          }
+
+          // Print Price Calculation
+          if (photoType === "Both" || photoType === "printedPhotos") {
+            $(".print-checkbox:checked").each(function () {
+              let price = parseFloat($(this).data("price"));
+              printPrice += price * childCount;
+
+              if (individualPortraits === "Yes") {
+                printPrice += price * childCount;
+              }
+
+              if (classPhoto === "Yes") {
+                printPrice += sameClass === "Yes" ? price : price * childCount; // Class photo print price
+              }
+            });
+          }
+
+          let total = digitalPrice + printPrice;
+          $("#digitalPrice").text(digitalPrice.toFixed(2));
+          $("#printPrice").text(printPrice.toFixed(2));
+          $("#totalPrice").text(total.toFixed(2));
+        }
+        calculatePrice();
+      });
+    </script>
+  </body>
+</html>
